@@ -2,179 +2,163 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
-/>
-  <title>Медитация и Настроение</title>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover,
+                 maximum-scale=1, user-scalable=no">
+  <title>Медитация · Календарь настроения</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0d0b12">
+  <meta name="theme-color" content="#0e0b14">
+
   <style>
     :root{
-      --bg:#0d0b12;
-      --card:#16141e;
+      --bg:#0e0b14;
+      --bg2:#171425;
+      --card:#1a1728;
+      --text:#fff;
       --muted:#bdbcc7;
-      --text:#ffffff;
-      --acc:#6a5cff;
-      --radius:22px;
-      --shadow:0 10px 40px rgba(0,0,0,.45);
+      --radius:26px;
+      --shadow:0 16px 60px rgba(0,0,0,.45);
       --safe-top: env(safe-area-inset-top);
       --safe-bottom: env(safe-area-inset-bottom);
       --safe-left: env(safe-area-inset-left);
       --safe-right: env(safe-area-inset-right);
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;background:radial-gradient(1200px 800px at 70% -10%, #3b2a63 0%, #1a1525 40%, #0d0b12 100%);color:var(--text);font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Display", Inter, Arial; margin:0}
-    /* контейнер «экрана» в стиле айфона */
+    html,body{height:100%;margin:0;color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Inter,system-ui,Arial}
+    body{
+      background:
+        radial-gradient(900px 700px at 85% -10%, #3a2a62 0%, #1d1830 45%, #0e0b14 100%),
+        linear-gradient(#0e0b14,#0e0b14);
+    }
+
+    /* контейнер приложения с учётом выреза и home-индикатора */
     .app{
       position:fixed; inset:0;
-      padding:calc(20px + var(--safe-top)) calc(16px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(16px + var(--safe-left));
-      display:flex; overflow:hidden;
+      padding:calc(18px + var(--safe-top))
+               calc(16px + var(--safe-right))
+               calc(18px + var(--safe-bottom))
+               calc(16px + var(--safe-left));
+      overflow:hidden; display:flex;
     }
-    .screen{
-      min-width:100%;
-      flex:0 0 100%;
-      padding:8px;
-      display:flex; flex-direction:column; gap:18px;
-      transition:transform .5s cubic-bezier(.2,.8,.2,1);
-    }
-    .carousel{ display:flex; width:300%; transform:translateX(0); }
 
-    /* общие элементы */
+    /* карусель из трёх экранов */
+    .carousel{display:flex; width:300%; transition:transform .55s cubic-bezier(.2,.8,.2,1)}
+    .screen{min-width:100%; padding:6px; display:flex; flex-direction:column; gap:18px}
+
+    .chip{display:inline-block; padding:10px 14px; border-radius:999px;
+      background:#211c30; color:#d4d2df; font-size:14px}
+    .title{
+      font-size:44px; line-height:1.02; font-weight:900; letter-spacing:-.02em;
+      background:linear-gradient(90deg,#ffffff, #ffd4b0 30%, #f0b0ff 60%, #ffffff 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      margin:8px 0 6px 0;
+    }
+    .subtitle{color:var(--muted); font-size:18px}
+
+    .card{
+      position:relative; overflow:hidden; border-radius:var(--radius);
+      background:linear-gradient(135deg,var(--card) 0%, #151224 60%);
+      padding:20px; box-shadow:var(--shadow)
+    }
+    .blob,.blob2{
+      position:absolute; border-radius:50%; filter:blur(28px); opacity:.7; pointer-events:none
+    }
+    .blob{width:320px; height:320px; right:-80px; top:-60px;
+      background:conic-gradient(from 180deg,#7a70ff, #ffa963, #ff6ab1, #7a70ff)}
+    .blob2{width:200px; height:200px; left:-60px; bottom:-40px;
+      background:conic-gradient(from 0deg,#6f66ff,#8fcaff,#b38bff,#6f66ff)}
+
     .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
-    .greet{font-size:36px; line-height:1.1; font-weight:700; letter-spacing:-.02em}
-    .muted{color:var(--muted)}
-    .chip{padding:10px 14px; border-radius:999px; background:#221e2f; font-size:14px}
     .btn{
-      border:0; outline:0; cursor:pointer;
-      padding:14px 18px; border-radius:16px;
-      background:#ffffff10; color:#fff; font-weight:600; font-size:16px;
-      box-shadow:var(--shadow)
+      border:0; outline:0; cursor:pointer; border-radius:16px; padding:14px 18px;
+      background:#ffffff12; color:#fff; font-weight:600; font-size:16px;
     }
     .btn:active{transform:translateY(1px); opacity:.95}
+
+    .pill{border-radius:14px; padding:12px 14px; background:#19162a; font-weight:700; font-size:28px}
+
+    /* большая круглая кнопка «далее» снизу справа */
     .fab{
-      position:fixed; right:calc(16px + var(--safe-right)); bottom:calc(24px + var(--safe-bottom));
-      width:64px; height:64px; border-radius:32px; display:grid; place-items:center;
-      background:#ffffff; color:#000; font-weight:700; box-shadow:0 12px 50px rgba(0,0,0,.55)
-    }
-    /* карточки с мягкими градиентами */
-    .card{
-      background:linear-gradient(135deg,#201b2c 0%, #171423 60%);
-      border-radius:var(--radius);
-      padding:18px; box-shadow:var(--shadow); position:relative; overflow:hidden
-    }
-    .blob{
-      position:absolute; inset:auto; width:240px; height:240px; border-radius:50%;
-      filter:blur(30px); opacity:.65; pointer-events:none;
-      background:conic-gradient(from 180deg,#6d6bff, #9c67ff, #ffb86b, #ff6aa5, #6d6bff);
-      transform:translate(40px, -60px) rotate(20deg);
-    }
-    .blob.small{width:160px;height:160px; transform:translate(120px, 20px) rotate(-15deg)}
-    .title-lg{font-size:44px; line-height:1.05; letter-spacing:-.02em; font-weight:800}
-    .subtitle{font-size:18px; color:var(--muted)}
-
-    /* Экран 1 — приветствие */
-    .start-cta{
-      margin-top:auto;display:flex; justify-content:flex-end;
-    }
-    .start-cta .go{
-      width:80px;height:80px;border-radius:40px;background:#fff;color:#000;
-      display:grid; place-items:center; font-size:28px; box-shadow:var(--shadow)
+      position:fixed; right:calc(18px + var(--safe-right));
+      bottom:calc(26px + var(--safe-bottom));
+      width:76px; height:76px; border-radius:50%;
+      display:grid; place-items:center; background:#fff; color:#000;
+      font-size:28px; box-shadow:0 16px 60px rgba(0,0,0,.55); z-index:10
     }
 
-    /* Экран 2 — медитация */
-    .breath{
-      background:#14121e; border-radius:var(--radius); padding:20px; display:flex; flex-direction:column; gap:12px; align-items:center
-    }
+    /* экран 2 — дыхание */
+    .breath{display:flex; flex-direction:column; align-items:center; gap:12px}
     .circle{
-      width:240px; height:240px; border-radius:50%;
-      background:radial-gradient(100% 100% at 30% 30%, #fff8 0%, #ffffff15 60%, #ffffff05 100%), 
-                 conic-gradient(from 90deg, #7d69ff, #ffcc70, #ffa0d0, #7d69ff);
-      box-shadow:0 30px 80px rgba(86,69,255,.25), inset 0 0 40px #fff2;
+      width:260px; height:260px; border-radius:50%;
+      background:
+        radial-gradient(90% 90% at 30% 30%, #fff7 0%, #ffffff18 60%, #ffffff08 100%),
+        conic-gradient(from 90deg,#7d69ff,#ffcc70,#ffa0d0,#7d69ff);
+      box-shadow:0 28px 90px rgba(86,69,255,.28), inset 0 0 40px #fff2;
       transition:transform 3.5s ease-in-out;
     }
-    .circle.grow{ transform:scale(1.25) }
-    .timer{font-size:48px; font-weight:800}
+    .circle.grow{transform:scale(1.25)}
+    .timer{font-size:52px; font-weight:900}
     .hint{font-size:16px; color:var(--muted)}
 
-    /* Экран 3 — календарь */
-    .cal{
-      background:#14121e; padding:18px; border-radius:var(--radius)
-    }
-    .cal .grid{
-      margin-top:10px;
-      display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; text-align:center
-    }
-    .dow{color:#9c99ad; font-size:12px}
+    /* экран 3 — календарь */
+    .cal{background:#151224; border-radius:var(--radius); padding:18px}
+    .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:10px}
+    .dow{color:#9f9bb0; font-size:12px; text-align:center}
     .day{
-      aspect-ratio:1/1; border-radius:14px; display:grid; place-items:center;
-      background:#1b1826; font-weight:600; position:relative
+      aspect-ratio:1/1; border-radius:16px; display:grid; place-items:center;
+      background:#1b1828; font-weight:700; position:relative;
     }
-    .day.today{outline:2px solid #ffffff; outline-offset:-2px}
-    .dot{ position:absolute; bottom:6px; width:8px; height:8px; border-radius:4px }
-    .mood-good{ background:#7CFF7A }
-    .mood-ok{ background:#FFD56A }
-    .mood-bad{ background:#FF6A88 }
+    .day.today{outline:2px solid #fff; outline-offset:-2px}
+    .dot{position:absolute; bottom:6px; width:8px; height:8px; border-radius:50%}
+    .mood-good{background:#7CFF7A}
+    .mood-ok{background:#FFD56A}
+    .mood-bad{background:#FF6A88}
     .editor{display:flex; flex-direction:column; gap:12px}
     .mood-row{display:flex; gap:10px}
-    .mood{
-      flex:1; padding:14px; border-radius:14px; background:#1e1a2a; text-align:center; font-size:22px
-    }
+    .mood{flex:1; padding:14px; border-radius:14px; background:#1f1a2d; text-align:center; font-size:22px}
     textarea{
       width:100%; min-height:88px; resize:none; border-radius:14px; border:0; padding:12px;
-      background:#1e1a2a; color:#fff; font-size:16px; outline:none
+      background:#1f1a2d; color:#fff; font-size:16px; outline:none
     }
-    .save{background:#fff; color:#000}
+    .save{background:#fff; color:#000; font-weight:800}
 
-    /* адаптив для «айфон-16» (высокий экран) */
+    /* немного увеличим типографику для высоких экранов (iPhone 15/16) */
     @media (min-height: 820px){
-      .title-lg{font-size:52px}
-      .circle{width:280px;height:280px}
+      .title{font-size:50px}
+      .circle{width:300px;height:300px}
     }
   </style>
 </head>
 <body>
   <div class="app" id="app">
-    <div class="carousel" id="carousel" style="transform:translateX(0)">
-      <!-- Экран 1: Приветствие -->
+    <div class="carousel" id="carousel">
+      <!-- Экран 1: приветствие -->
       <section class="screen" aria-label="Приветствие">
-        <div class="row">
-          <div class="chip">Здравствуйте</div>
-          <div class="chip">Сегодня: <span id="todayStr">—</span></div>
+        <div class="chip">Здравствуйте</div>
+
+        <div class="card">
+          <div class="blob"></div><div class="blob2"></div>
+          <div class="title">Учимся дышать<br/>и быть спокойнее</div>
+          <div class="subtitle">Нажмите круглую кнопку снизу, чтобы начать короткую сессию, затем отметьте настроение в календаре.</div>
         </div>
 
         <div class="card">
-          <div class="blob"></div><div class="blob small"></div>
-          <div class="title-lg">Учимся дышать<br/>и быть <span style="font-weight:900">спокойнее</span></div>
-          <p class="subtitle">Нажмите «→», чтобы начать короткую медитацию, а затем отметьте настроение в календаре.</p>
-        </div>
-
-        <div class="row">
-          <div class="card" style="flex:1">
-            <div class="subtitle">Быстрая сессия</div>
-            <div class="greet">3–5 мин</div>
-          </div>
-          <div class="card" style="flex:1">
-            <div class="subtitle">Режим</div>
-            <div class="greet">Вдох 4 • Пауза 2 • Выдох 6</div>
-          </div>
-        </div>
-
-        <div class="start-cta">
-          <button class="go" id="toMeditation" aria-label="Начать">→</button>
+          <div class="subtitle">Быстрая сессия</div>
+          <div class="pill">3–5 мин</div>
         </div>
       </section>
 
-      <!-- Экран 2: Медитация -->
+      <!-- Экран 2: медитация -->
       <section class="screen" aria-label="Медитация">
         <div class="row">
-          <button class="btn" id="back1">←</button>
-          <div class="chip">Медитация дыхания</div>
+          <button class="btn" id="back1">← Назад</button>
+          <span class="chip">Дыхание 4–2–6</span>
           <button class="btn" id="toCalendar">Календарь →</button>
         </div>
 
-        <div class="breath card" style="margin-top:12px">
-          <div class="circle" id="circle" aria-live="polite"></div>
+        <div class="card breath">
+          <div class="circle" id="circle"></div>
           <div class="timer" id="timer">03:00</div>
           <div class="hint" id="phase">Готовы? Нажмите «Старт»</div>
           <div class="row" style="gap:10px">
@@ -183,30 +167,25 @@
             <button class="btn" id="reset">Сброс</button>
           </div>
         </div>
-
-        <div class="card">
-          <div class="subtitle">Подсказка</div>
-          <div>Дышите через нос. Следуйте подсказкам: <b>вдох 4с</b> → <b>пауза 2с</b> → <b>выдох 6с</b>. Сфокусируйтесь на плавности.</div>
-        </div>
       </section>
 
-      <!-- Экран 3: Календарь и настроение -->
+      <!-- Экран 3: календарь -->
       <section class="screen" aria-label="Календарь">
         <div class="row">
-          <button class="btn" id="back2">←</button>
-          <div class="chip">Ваш календарь</div>
-          <div class="chip" id="monthLabel">—</div>
+          <button class="btn" id="back2">← Медитация</button>
+          <span class="chip" id="monthLabel">—</span>
         </div>
 
         <div class="cal card">
-          <div class="row"><div class="subtitle">Отметьте настроение</div>
+          <div class="row">
+            <div class="subtitle">Отметьте настроение</div>
             <div class="row">
               <button class="btn" id="prevM">‹</button>
               <button class="btn" id="nextM">›</button>
             </div>
           </div>
 
-          <div class="grid" id="dow">
+          <div class="grid">
             <div class="dow">ПН</div><div class="dow">ВТ</div><div class="dow">СР</div>
             <div class="dow">ЧТ</div><div class="dow">ПТ</div><div class="dow">СБ</div><div class="dow">ВС</div>
           </div>
@@ -214,7 +193,7 @@
         </div>
 
         <div class="card editor">
-          <div class="subtitle">Сегодня: <span id="selectedDate">—</span></div>
+          <div class="subtitle">Дата: <span id="selectedDate">—</span></div>
           <div class="mood-row">
             <button class="mood" data-mood="good">😊 Хорошо</button>
             <button class="mood" data-mood="ok">😐 Нормально</button>
@@ -226,63 +205,54 @@
       </section>
     </div>
 
-    <!-- плавающая подсказка про свайпы -->
-    <div class="fab" id="hintFab" title="Свайпайте">
-      ↔
-    </div>
+    <!-- большая круглая кнопка «далее» для 1-го экрана -->
+    <button class="fab" id="fab" aria-label="Далее">→</button>
   </div>
 
 <script>
-  // ---------------- Вспомогательное ----------------
-  const $ = s => document.querySelector(s);
+  // ===== утилиты =====
+  const $  = s => document.querySelector(s);
   const $$ = s => document.querySelectorAll(s);
-  const state = {
-    screen: 0,
-    timerSec: 180,
-    running: false,
-    phase: 'idle', // inhale/hold/exhale
-    monthOffset: 0, // 0 = текущий месяц
-    selected: new Date(),
-  };
+  const appEl = document.getElementById('app');     // <— БЫЛО ОТСУТСТВИЕ, из-за этого всё «ломалось»
+  const carousel = document.getElementById('carousel');
+  const fab = document.getElementById('fab');
 
+  const state = {
+    screen: 0, timerSec: 180, running:false, phase:'idle',
+    monthOffset:0, selected:new Date()
+  };
   const fmt2 = n => String(n).padStart(2,'0');
   const fmtTime = s => `${fmt2(Math.floor(s/60))}:${fmt2(s%60)}`;
   const ymd = d => {
     const z = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     return `${z.getFullYear()}-${fmt2(z.getMonth()+1)}-${fmt2(z.getDate())}`;
   };
-  const todayStr = new Date().toLocaleDateString('ru-RU', {weekday:'long', day:'numeric', month:'long'});
-  $('#todayStr').textContent = todayStr.charAt(0).toUpperCase()+todayStr.slice(1);
 
-  // ---------------- Навигация и свайпы ----------------
-  const carousel = $('#carousel');
+  // ===== навигация / свайпы =====
   function go(i){
     state.screen = Math.max(0, Math.min(2, i));
     carousel.style.transform = `translateX(-${state.screen*100}%)`;
-    $('#hintFab').style.display = (state.screen===0)?'grid':'none';
+    fab.style.display = state.screen===0 ? 'grid' : 'none';
   }
-  $('#toMeditation').onclick = ()=>go(1);
-  $('#toCalendar').onclick  = ()=>go(2);
-  $('#back1').onclick = ()=>go(0);
-  $('#back2').onclick = ()=>go(1);
+  fab.addEventListener('click', ()=>go(1));
+  $('#back1').addEventListener('click', ()=>go(0));
+  $('#toCalendar').addEventListener('click', ()=>go(2));
+  $('#back2').addEventListener('click', ()=>go(1));
 
   // свайпы
-  let x0=null, locked=false;
-  function unify(e){ return e.changedTouches? e.changedTouches[0] : e }
-  app.addEventListener('touchstart', e => { x0 = unify(e).clientX }, {passive:true});
-  app.addEventListener('touchmove', e => {
-    if(!x0 || locked) return;
-    const dx = unify(e).clientX - x0;
-    if(Math.abs(dx)>60){
-      locked = true;
-      if(dx<0) go(state.screen+1); else go(state.screen-1);
-      setTimeout(()=>locked=false, 350);
-    }
+  let startX=null, locked=false;
+  const touch = e => e.changedTouches ? e.changedTouches[0] : e;
+  appEl.addEventListener('touchstart',  e => { startX = touch(e).clientX }, {passive:true});
+  appEl.addEventListener('touchmove',   e => {
+    if(startX==null || locked) return;
+    const dx = touch(e).clientX - startX;
+    if(Math.abs(dx)>60){ locked = true; if(dx<0) go(state.screen+1); else go(state.screen-1);
+      setTimeout(()=>locked=false, 320); }
   }, {passive:true});
-  app.addEventListener('touchend', ()=> x0=null);
+  appEl.addEventListener('touchend',    ()=> startX=null);
 
-  // ---------------- Медитация: дыхательный таймер ----------------
-  const T_IN=4, T_HOLD=2, T_OUT=6; // секунды
+  // ===== медитация =====
+  const T_IN=4, T_HOLD=2, T_OUT=6;
   let tInterval=null, phaseT=0;
   const circle=$('#circle'), timer=$('#timer'), phase=$('#phase');
 
@@ -291,16 +261,14 @@
     phase.textContent = p==='inhale'?'Вдохните…'
       : p==='hold' ? 'Задержите дыхание…'
       : 'Медленно выдыхайте…';
-    circle.classList.toggle('grow', p!=='exhale'); // на выдох — уменьшается
+    circle.classList.toggle('grow', p!=='exhale');
   }
-
   function nextPhase(){
     if(state.phase==='idle') setPhase('inhale');
     else if(state.phase==='inhale') setPhase('hold');
     else if(state.phase==='hold') setPhase('exhale');
     else setPhase('inhale');
   }
-
   function tick(){
     if(!state.running) return;
     if(state.timerSec<=0){ stop(); phase.textContent='Готово! Отличная работа.'; return; }
@@ -314,97 +282,83 @@
     tInterval = setInterval(tick, 1000);
   }
   function stop(){ state.running=false; clearInterval(tInterval); }
-  function reset(){ stop(); state.timerSec=180; state.phase='idle'; timer.textContent=fmtTime(state.timerSec); phase.textContent='Готовы? Нажмите «Старт»'; circle.classList.remove('grow') }
+  function reset(){ stop(); state.timerSec=180; state.phase='idle';
+    timer.textContent=fmtTime(state.timerSec); phase.textContent='Готовы? Нажмите «Старт»'; circle.classList.remove('grow') }
 
-  $('#start').onclick=start; $('#pause').onclick=stop; $('#reset').onclick=reset;
+  $('#start').addEventListener('click', start);
+  $('#pause').addEventListener('click', stop);
+  $('#reset').addEventListener('click', reset);
   timer.textContent = fmtTime(state.timerSec);
 
-  // ---------------- Календарь и настроение ----------------
+  // ===== календарь / настроение =====
   const monthLabel = $('#monthLabel');
-  const daysWrap = $('#days');
+  const daysWrap   = $('#days');
   const selectedDateLabel = $('#selectedDate');
-  const noteEl = $('#note');
+  const noteEl     = $('#note');
 
   function loadMood(key){ try{ return JSON.parse(localStorage.getItem('mood:'+key)||'{}'); }catch(e){ return {}; } }
-  function saveMood(key, obj){ localStorage.setItem('mood:'+key, JSON.stringify(obj)); }
+  function saveMood(key,obj){ localStorage.setItem('mood:'+key, JSON.stringify(obj)); }
 
   function monthInfo(offset){
     const base = new Date();
-    const year = base.getFullYear(), month = base.getMonth()+offset;
-    const d = new Date(year, month, 1);
-    const firstDow = (d.getDay()+6)%7; // понедельник=0
+    const d = new Date(base.getFullYear(), base.getMonth()+offset, 1);
+    const firstDow = (d.getDay()+6)%7; // пн=0
     const days = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
-    return {d, firstDow, days};
+    return {d,firstDow,days};
   }
-
   function paintMonth(){
-    const {d, firstDow, days} = monthInfo(state.monthOffset);
-    monthLabel.textContent = d.toLocaleDateString('ru-RU',{month:'long', year:'numeric'});
+    const {d,firstDow,days} = monthInfo(state.monthOffset);
+    monthLabel.textContent = d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
     daysWrap.innerHTML='';
-    // пустые клетки до 1-го числа
-    for(let i=0;i<firstDow;i++){ const s=document.createElement('div'); daysWrap.appendChild(s); }
+    for(let i=0;i<firstDow;i++) daysWrap.appendChild(document.createElement('div'));
+
     const todayKey = ymd(new Date());
     for(let day=1; day<=days; day++){
-      const cell=document.createElement('button');
-      cell.className='day';
-      const thisDate = new Date(d.getFullYear(), d.getMonth(), day);
-      const key = ymd(thisDate);
+      const cell=document.createElement('button'); cell.type='button'; cell.className='day';
+      const cur = new Date(d.getFullYear(), d.getMonth(), day);
+      const key = ymd(cur);
       cell.textContent = day;
       if(key===todayKey) cell.classList.add('today');
 
-      // точка настроения
       const stored = loadMood(key);
       if(stored.mood){
         const dot=document.createElement('div'); dot.className='dot';
         dot.classList.add(stored.mood==='good'?'mood-good':stored.mood==='ok'?'mood-ok':'mood-bad');
         cell.appendChild(dot);
       }
-      cell.onclick=()=>{
-        state.selected=thisDate;
-        selectedDateLabel.textContent=thisDate.toLocaleDateString('ru-RU',{day:'numeric', month:'long', year:'numeric'});
-        noteEl.value= (stored.note||'');
-        // подсветим выбранную дату слегка уменьшая остальных
-        [...daysWrap.querySelectorAll('.day')].forEach(d=>d.style.opacity='.6');
-        cell.style.opacity='1';
-      }
+      cell.addEventListener('click', ()=>{
+        state.selected=cur;
+        selectedDateLabel.textContent = cur.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+        noteEl.value = stored.note||'';
+        [...daysWrap.querySelectorAll('.day')].forEach(d=>d.style.opacity='.6'); cell.style.opacity='1';
+      });
       daysWrap.appendChild(cell);
     }
-    // выбрать сегодня по умолчанию
-    const todayButton = daysWrap.querySelector('.day.today');
-    if(todayButton) todayButton.click();
+    const todayBtn = daysWrap.querySelector('.day.today'); if(todayBtn) todayBtn.click();
   }
+  $('#prevM').addEventListener('click', ()=>{ state.monthOffset--; paintMonth(); });
+  $('#nextM').addEventListener('click', ()=>{ state.monthOffset++; paintMonth(); });
+  paintMonth();
 
-  $('#prevM').onclick = ()=>{ state.monthOffset--; paintMonth(); }
-  $('#nextM').onclick = ()=>{ state.monthOffset++; paintMonth(); }
-  selectedDateLabel.textContent = new Date().toLocaleDateString('ru-RU',{day:'numeric', month:'long', year:'numeric'});
-
-  // выбор настроения
   $$('.mood').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       $$('.mood').forEach(b=>b.style.outline='none');
       btn.style.outline='2px solid #fff';
-      btn.dataset.active='1';
-      // временно храним на кнопке
-      $('#save').dataset.mood = btn.getAttribute('data-mood');
+      $('#save').dataset.mood = btn.dataset.mood;
     });
   });
-
-  $('#save').onclick = ()=>{
+  $('#save').addEventListener('click', ()=>{
     const key = ymd(state.selected);
     const mood = $('#save').dataset.mood || 'ok';
     const note = noteEl.value.trim();
-    saveMood(key, {mood, note});
-    paintMonth();
+    saveMood(key,{mood,note}); paintMonth();
     alert('Сохранено ✅');
-  };
+  });
 
-  // первый рендер
-  paintMonth();
-
-  // клавиатура (для десктопа на GitHub Pages) + подсказка
-  document.addEventListener('keydown', (e)=>{
+  // поддержка клавиатуры на десктопе (GitHub Pages)
+  document.addEventListener('keydown', e=>{
     if(e.key==='ArrowRight') go(state.screen+1);
-    if(e.key==='ArrowLeft') go(state.screen-1);
+    if(e.key==='ArrowLeft')  go(state.screen-1);
     if(e.key===' ') start();
   });
 </script>
