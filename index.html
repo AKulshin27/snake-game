@@ -3,364 +3,332 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport"
-        content="width=device-width, initial-scale=1, viewport-fit=cover,
-                 maximum-scale=1, user-scalable=no">
-  <title>Медитация · Календарь настроения</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#0e0b14">
+        content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Мишка-ломатель иконок 🐻</title>
+  <meta name="theme-color" content="#4b3c6e">
 
   <style>
     :root{
-      --bg:#0e0b14;
-      --bg2:#171425;
-      --card:#1a1728;
-      --text:#fff;
-      --muted:#bdbcc7;
-      --radius:26px;
-      --shadow:0 16px 60px rgba(0,0,0,.45);
-      --safe-top: env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-      --safe-left: env(safe-area-inset-left);
-      --safe-right: env(safe-area-inset-right);
+      --w:1179; /* реальный канвас: iPhone 16 px */
+      --h:2556;
+      --bg:#4a3a6e;       /* фон как в Early Worm */
+      --lane:#2b2833;     /* базовый пол */
+      --lane2:#30303a;    /* вторая клетка для шахматки */
+      --bush:#3BB34A;     /* кусты */
+      --shadow:0 30px 120px rgba(0,0,0,.45);
+      --cell:27;          /* размер клетки на канвасе (удобно делится) */
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{height:100%;margin:0;color:var(--text);
-      font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Inter,system-ui,Arial}
-    body{
-      background:
-        radial-gradient(900px 700px at 85% -10%, #3a2a62 0%, #1d1830 45%, #0e0b14 100%),
-        linear-gradient(#0e0b14,#0e0b14);
+    html,body{height:100%;margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Inter,Arial;color:#fff}
+    .wrap{
+      /* чтобы полотно 1179×2556 влезало в любое окно, сохраняя пропорции */
+      position:fixed; inset:0; display:grid; place-items:center;
+      background:var(--bg);
     }
-
-    /* контейнер приложения с учётом выреза и home-индикатора */
-    .app{
-      position:fixed; inset:0;
-      padding:calc(18px + var(--safe-top))
-               calc(16px + var(--safe-right))
-               calc(18px + var(--safe-bottom))
-               calc(16px + var(--safe-left));
-      overflow:hidden; display:flex;
+    canvas{
+      width:min(100vw, calc(100vh * (1179/2556)));
+      height:calc(100vw * (2556/1179));
+      max-height:100vh;
+      max-width:100vw;
+      box-shadow:var(--shadow);
+      border-radius:28px;
+      touch-action:none;   /* важно для тача без прокрутки */
+      background:#201a2f;
     }
-
-    /* карусель из трёх экранов */
-    .carousel{display:flex; width:300%; transition:transform .55s cubic-bezier(.2,.8,.2,1)}
-    .screen{min-width:100%; padding:6px; display:flex; flex-direction:column; gap:18px}
-
-    .chip{display:inline-block; padding:10px 14px; border-radius:999px;
-      background:#211c30; color:#d4d2df; font-size:14px}
-    .title{
-      font-size:44px; line-height:1.02; font-weight:900; letter-spacing:-.02em;
-      background:linear-gradient(90deg,#ffffff, #ffd4b0 30%, #f0b0ff 60%, #ffffff 100%);
-      -webkit-background-clip:text; background-clip:text; color:transparent;
-      margin:8px 0 6px 0;
+    .hud{
+      position:fixed; left:50%; top:14px; transform:translateX(-50%);
+      display:flex; gap:10px; align-items:center; padding:8px 14px; border-radius:999px;
+      background:#00000033; backdrop-filter: blur(6px); font-weight:700
     }
-    .subtitle{color:var(--muted); font-size:18px}
-
-    .card{
-      position:relative; overflow:hidden; border-radius:var(--radius);
-      background:linear-gradient(135deg,var(--card) 0%, #151224 60%);
-      padding:20px; box-shadow:var(--shadow)
-    }
-    .blob,.blob2{
-      position:absolute; border-radius:50%; filter:blur(28px); opacity:.7; pointer-events:none
-    }
-    .blob{width:320px; height:320px; right:-80px; top:-60px;
-      background:conic-gradient(from 180deg,#7a70ff, #ffa963, #ff6ab1, #7a70ff)}
-    .blob2{width:200px; height:200px; left:-60px; bottom:-40px;
-      background:conic-gradient(from 0deg,#6f66ff,#8fcaff,#b38bff,#6f66ff)}
-
-    .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
-    .btn{
-      border:0; outline:0; cursor:pointer; border-radius:16px; padding:14px 18px;
-      background:#ffffff12; color:#fff; font-weight:600; font-size:16px;
-    }
-    .btn:active{transform:translateY(1px); opacity:.95}
-
-    .pill{border-radius:14px; padding:12px 14px; background:#19162a; font-weight:700; font-size:28px}
-
-    /* большая круглая кнопка «далее» снизу справа */
-    .fab{
-      position:fixed; right:calc(18px + var(--safe-right));
-      bottom:calc(26px + var(--safe-bottom));
-      width:76px; height:76px; border-radius:50%;
-      display:grid; place-items:center; background:#fff; color:#000;
-      font-size:28px; box-shadow:0 16px 60px rgba(0,0,0,.55); z-index:10
-    }
-
-    /* экран 2 — дыхание */
-    .breath{display:flex; flex-direction:column; align-items:center; gap:12px}
-    .circle{
-      width:260px; height:260px; border-radius:50%;
-      background:
-        radial-gradient(90% 90% at 30% 30%, #fff7 0%, #ffffff18 60%, #ffffff08 100%),
-        conic-gradient(from 90deg,#7d69ff,#ffcc70,#ffa0d0,#7d69ff);
-      box-shadow:0 28px 90px rgba(86,69,255,.28), inset 0 0 40px #fff2;
-      transition:transform 3.5s ease-in-out;
-    }
-    .circle.grow{transform:scale(1.25)}
-    .timer{font-size:52px; font-weight:900}
-    .hint{font-size:16px; color:var(--muted)}
-
-    /* экран 3 — календарь */
-    .cal{background:#151224; border-radius:var(--radius); padding:18px}
-    .grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:10px}
-    .dow{color:#9f9bb0; font-size:12px; text-align:center}
-    .day{
-      aspect-ratio:1/1; border-radius:16px; display:grid; place-items:center;
-      background:#1b1828; font-weight:700; position:relative;
-    }
-    .day.today{outline:2px solid #fff; outline-offset:-2px}
-    .dot{position:absolute; bottom:6px; width:8px; height:8px; border-radius:50%}
-    .mood-good{background:#7CFF7A}
-    .mood-ok{background:#FFD56A}
-    .mood-bad{background:#FF6A88}
-    .editor{display:flex; flex-direction:column; gap:12px}
-    .mood-row{display:flex; gap:10px}
-    .mood{flex:1; padding:14px; border-radius:14px; background:#1f1a2d; text-align:center; font-size:22px}
-    textarea{
-      width:100%; min-height:88px; resize:none; border-radius:14px; border:0; padding:12px;
-      background:#1f1a2d; color:#fff; font-size:16px; outline:none
-    }
-    .save{background:#fff; color:#000; font-weight:800}
-
-    /* немного увеличим типографику для высоких экранов (iPhone 15/16) */
-    @media (min-height: 820px){
-      .title{font-size:50px}
-      .circle{width:300px;height:300px}
-    }
+    .btn{background:#ffffff15; color:#fff; border:0; padding:10px 14px; border-radius:12px; font-weight:700}
   </style>
 </head>
 <body>
-  <div class="app" id="app">
-    <div class="carousel" id="carousel">
-      <!-- Экран 1: приветствие -->
-      <section class="screen" aria-label="Приветствие">
-        <div class="chip">Здравствуйте</div>
-
-        <div class="card">
-          <div class="blob"></div><div class="blob2"></div>
-          <div class="title">Учимся дышать<br/>и быть спокойнее</div>
-          <div class="subtitle">Нажмите круглую кнопку снизу, чтобы начать короткую сессию, затем отметьте настроение в календаре.</div>
-        </div>
-
-        <div class="card">
-          <div class="subtitle">Быстрая сессия</div>
-          <div class="pill">3–5 мин</div>
-        </div>
-      </section>
-
-      <!-- Экран 2: медитация -->
-      <section class="screen" aria-label="Медитация">
-        <div class="row">
-          <button class="btn" id="back1">← Назад</button>
-          <span class="chip">Дыхание 4–2–6</span>
-          <button class="btn" id="toCalendar">Календарь →</button>
-        </div>
-
-        <div class="card breath">
-          <div class="circle" id="circle"></div>
-          <div class="timer" id="timer">03:00</div>
-          <div class="hint" id="phase">Готовы? Нажмите «Старт»</div>
-          <div class="row" style="gap:10px">
-            <button class="btn" id="start">Старт</button>
-            <button class="btn" id="pause">Пауза</button>
-            <button class="btn" id="reset">Сброс</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Экран 3: календарь -->
-      <section class="screen" aria-label="Календарь">
-        <div class="row">
-          <button class="btn" id="back2">← Медитация</button>
-          <span class="chip" id="monthLabel">—</span>
-        </div>
-
-        <div class="cal card">
-          <div class="row">
-            <div class="subtitle">Отметьте настроение</div>
-            <div class="row">
-              <button class="btn" id="prevM">‹</button>
-              <button class="btn" id="nextM">›</button>
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="dow">ПН</div><div class="dow">ВТ</div><div class="dow">СР</div>
-            <div class="dow">ЧТ</div><div class="dow">ПТ</div><div class="dow">СБ</div><div class="dow">ВС</div>
-          </div>
-          <div class="grid" id="days"></div>
-        </div>
-
-        <div class="card editor">
-          <div class="subtitle">Дата: <span id="selectedDate">—</span></div>
-          <div class="mood-row">
-            <button class="mood" data-mood="good">😊 Хорошо</button>
-            <button class="mood" data-mood="ok">😐 Нормально</button>
-            <button class="mood" data-mood="bad">😞 Плохо</button>
-          </div>
-          <textarea id="note" placeholder="Короткая заметка (необязательно)"></textarea>
-          <button class="btn save" id="save">Сохранить</button>
-        </div>
-      </section>
-    </div>
-
-    <!-- большая круглая кнопка «далее» для 1-го экрана -->
-    <button class="fab" id="fab" aria-label="Далее">→</button>
+  <div class="hud">
+    <div id="score">Счёт: 0</div>
+    <button class="btn" id="restart">Перезапуск</button>
+  </div>
+  <div class="wrap">
+    <canvas id="game" width="1179" height="2556"></canvas>
   </div>
 
 <script>
-  // ===== утилиты =====
-  const $  = s => document.querySelector(s);
-  const $$ = s => document.querySelectorAll(s);
-  const appEl = document.getElementById('app');     // <— БЫЛО ОТСУТСТВИЕ, из-за этого всё «ломалось»
-  const carousel = document.getElementById('carousel');
-  const fab = document.getElementById('fab');
+(() => {
+  const W = 1179, H = 2556;
+  const CELL = 27;                 // сетка 27 px
+  const COLS = Math.floor(W / CELL);
+  const ROWS = Math.floor(H / CELL);
 
-  const state = {
-    screen: 0, timerSec: 180, running:false, phase:'idle',
-    monthOffset:0, selected:new Date()
-  };
-  const fmt2 = n => String(n).padStart(2,'0');
-  const fmtTime = s => `${fmt2(Math.floor(s/60))}:${fmt2(s%60)}`;
-  const ymd = d => {
-    const z = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    return `${z.getFullYear()}-${fmt2(z.getMonth()+1)}-${fmt2(z.getDate())}`;
-  };
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
 
-  // ===== навигация / свайпы =====
-  function go(i){
-    state.screen = Math.max(0, Math.min(2, i));
-    carousel.style.transform = `translateX(-${state.screen*100}%)`;
-    fab.style.display = state.screen===0 ? 'grid' : 'none';
+  // ----- геометрия уровня (в стиле Early Worm) -----
+  const playRect = { x: CELL*2, y: CELL*4, w: W - CELL*4, h: H - CELL*8, r: 60 }; // большое L-образное не делаем — берём округлённый прямоугольник
+  function roundRectPath({x,y,w,h,r}){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
   }
-  fab.addEventListener('click', ()=>go(1));
-  $('#back1').addEventListener('click', ()=>go(0));
-  $('#toCalendar').addEventListener('click', ()=>go(2));
-  $('#back2').addEventListener('click', ()=>go(1));
 
-  // свайпы
-  let startX=null, locked=false;
-  const touch = e => e.changedTouches ? e.changedTouches[0] : e;
-  appEl.addEventListener('touchstart',  e => { startX = touch(e).clientX }, {passive:true});
-  appEl.addEventListener('touchmove',   e => {
-    if(startX==null || locked) return;
-    const dx = touch(e).clientX - startX;
-    if(Math.abs(dx)>60){ locked = true; if(dx<0) go(state.screen+1); else go(state.screen-1);
-      setTimeout(()=>locked=false, 320); }
-  }, {passive:true});
-  appEl.addEventListener('touchend',    ()=> startX=null);
-
-  // ===== медитация =====
-  const T_IN=4, T_HOLD=2, T_OUT=6;
-  let tInterval=null, phaseT=0;
-  const circle=$('#circle'), timer=$('#timer'), phase=$('#phase');
-
-  function setPhase(p){
-    state.phase=p; phaseT = (p==='inhale'?T_IN : p==='hold'?T_HOLD : T_OUT);
-    phase.textContent = p==='inhale'?'Вдохните…'
-      : p==='hold' ? 'Задержите дыхание…'
-      : 'Медленно выдыхайте…';
-    circle.classList.toggle('grow', p!=='exhale');
-  }
-  function nextPhase(){
-    if(state.phase==='idle') setPhase('inhale');
-    else if(state.phase==='inhale') setPhase('hold');
-    else if(state.phase==='hold') setPhase('exhale');
-    else setPhase('inhale');
-  }
-  function tick(){
-    if(!state.running) return;
-    if(state.timerSec<=0){ stop(); phase.textContent='Готово! Отличная работа.'; return; }
-    timer.textContent = fmtTime(state.timerSec);
-    if(--phaseT<=0) nextPhase();
-    state.timerSec--;
-  }
-  function start(){
-    if(state.running) return;
-    state.running=true; if(state.phase==='idle') nextPhase();
-    tInterval = setInterval(tick, 1000);
-  }
-  function stop(){ state.running=false; clearInterval(tInterval); }
-  function reset(){ stop(); state.timerSec=180; state.phase='idle';
-    timer.textContent=fmtTime(state.timerSec); phase.textContent='Готовы? Нажмите «Старт»'; circle.classList.remove('grow') }
-
-  $('#start').addEventListener('click', start);
-  $('#pause').addEventListener('click', stop);
-  $('#reset').addEventListener('click', reset);
-  timer.textContent = fmtTime(state.timerSec);
-
-  // ===== календарь / настроение =====
-  const monthLabel = $('#monthLabel');
-  const daysWrap   = $('#days');
-  const selectedDateLabel = $('#selectedDate');
-  const noteEl     = $('#note');
-
-  function loadMood(key){ try{ return JSON.parse(localStorage.getItem('mood:'+key)||'{}'); }catch(e){ return {}; } }
-  function saveMood(key,obj){ localStorage.setItem('mood:'+key, JSON.stringify(obj)); }
-
-  function monthInfo(offset){
-    const base = new Date();
-    const d = new Date(base.getFullYear(), base.getMonth()+offset, 1);
-    const firstDow = (d.getDay()+6)%7; // пн=0
-    const days = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
-    return {d,firstDow,days};
-  }
-  function paintMonth(){
-    const {d,firstDow,days} = monthInfo(state.monthOffset);
-    monthLabel.textContent = d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
-    daysWrap.innerHTML='';
-    for(let i=0;i<firstDow;i++) daysWrap.appendChild(document.createElement('div'));
-
-    const todayKey = ymd(new Date());
-    for(let day=1; day<=days; day++){
-      const cell=document.createElement('button'); cell.type='button'; cell.className='day';
-      const cur = new Date(d.getFullYear(), d.getMonth(), day);
-      const key = ymd(cur);
-      cell.textContent = day;
-      if(key===todayKey) cell.classList.add('today');
-
-      const stored = loadMood(key);
-      if(stored.mood){
-        const dot=document.createElement('div'); dot.className='dot';
-        dot.classList.add(stored.mood==='good'?'mood-good':stored.mood==='ok'?'mood-ok':'mood-bad');
-        cell.appendChild(dot);
+  // рисуем шахматный пол
+  function drawFloor(){
+    roundRectPath(playRect);
+    ctx.save();
+    ctx.clip();
+    const s = CELL;
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const xx = c*s, yy = r*s;
+        if(xx<playRect.x || xx>playRect.x+playRect.w-s || yy<playRect.y || yy>playRect.y+playRect.h-s) continue;
+        ctx.fillStyle = ((r+c)%2===0) ? '#2b2833' : '#34323d';
+        ctx.fillRect(xx, yy, s, s);
       }
-      cell.addEventListener('click', ()=>{
-        state.selected=cur;
-        selectedDateLabel.textContent = cur.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
-        noteEl.value = stored.note||'';
-        [...daysWrap.querySelectorAll('.day')].forEach(d=>d.style.opacity='.6'); cell.style.opacity='1';
-      });
-      daysWrap.appendChild(cell);
     }
-    const todayBtn = daysWrap.querySelector('.day.today'); if(todayBtn) todayBtn.click();
+    ctx.restore();
   }
-  $('#prevM').addEventListener('click', ()=>{ state.monthOffset--; paintMonth(); });
-  $('#nextM').addEventListener('click', ()=>{ state.monthOffset++; paintMonth(); });
-  paintMonth();
 
-  $$('.mood').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.mood').forEach(b=>b.style.outline='none');
-      btn.style.outline='2px solid #fff';
-      $('#save').dataset.mood = btn.dataset.mood;
-    });
-  });
-  $('#save').addEventListener('click', ()=>{
-    const key = ymd(state.selected);
-    const mood = $('#save').dataset.mood || 'ok';
-    const note = noteEl.value.trim();
-    saveMood(key,{mood,note}); paintMonth();
-    alert('Сохранено ✅');
-  });
+  // рисуем «кусты» по периметру
+  function drawBushBorder(){
+    const {x,y,w,h,r}=playRect;
+    // толстая зелёная «рамка»
+    ctx.save();
+    roundRectPath({x:x-26, y:y-26, w:w+52, h:h+52, r:r+26});
+    ctx.clip('evenodd');
+    ctx.fillStyle='#3EB84F';
+    roundRectPath({x:x-18, y:y-18, w:w+36, h:h+36, r:r+18}); ctx.fill();
+    // зубчики-листья (простые дуги)
+    ctx.strokeStyle='#2f8f39'; ctx.lineWidth=18;
+    for(let i=0;i<40;i++){
+      const t = i/40;
+      const px = x + r + (w-2*r)*t;
+      ctx.beginPath(); ctx.arc(px, y-6, 18, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, y+h+6, 18, 0, Math.PI*2); ctx.stroke();
+    }
+    for(let i=0;i<60;i++){
+      const t = i/60;
+      const py = y + r + (h-2*r)*t;
+      ctx.beginPath(); ctx.arc(x-6, py, 18, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x+w+6, py, 18, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  }
 
-  // поддержка клавиатуры на десктопе (GitHub Pages)
+  // ----- столкновения со стеной (кусты = вне playRect) -----
+  function insidePlay(x, y){
+    // проверяем точку в скруглённом прямоугольнике: тогда обрезаем углы кругами
+    const {x:rx,y:ry,w,h,r} = playRect;
+    // в центральных зонах
+    if (x>=rx+r && x<=rx+w-r && y>=ry && y<=ry+h) return true;
+    if (x>=rx && x<=rx+w && y>=ry+r && y<=ry+h-r) return true;
+    // в угловых четвертях
+    const inCirc = (cx,cy) => (x-cx)*(x-cx)+(y-cy)*(y-cy) <= r*r;
+    if (x<rx+r && y<ry+r && inCirc(rx+r, ry+r)) return true;             // TL
+    if (x>rx+w-r && y<ry+r && inCirc(rx+w-r, ry+r)) return true;         // TR
+    if (x<rx+r && y>ry+h-r && inCirc(rx+r, ry+h-r)) return true;         // BL
+    if (x>rx+w-r && y>ry+h-r && inCirc(rx+w-r, ry+h-r)) return true;     // BR
+    return false;
+  }
+
+  // ----- игровая логика «змейки», только голова — мишка -----
+  const dir = {x:1, y:0};                 // текущее направление
+  const speed = 1;                         // клеток за тик
+  let snake = [];                          // массив сегментов {x,y}
+  let grow = 6;                            // стартовая длина
+  let icons = [];                          // «иконки A» для ломания
+  let score = 0;
+  const scoreEl = document.getElementById('score');
+
+  function gridSnap(v){ return Math.round(v / CELL) * CELL; }
+
+  function reset(){
+    snake = [];
+    const startX = gridSnap(playRect.x + playRect.w/2);
+    const startY = gridSnap(playRect.y + playRect.h/2);
+    for(let i=0;i<8;i++) snake.push({x:startX - i*CELL, y:startY});
+    dir.x = 1; dir.y = 0;
+    grow = 6;
+    score = 0; scoreEl.textContent = 'Счёт: 0';
+    spawnIcons(7);
+    running = true;
+  }
+
+  function spawnIcons(n){
+    icons = [];
+    for(let i=0;i<n;i++){
+      let p;
+      do{
+        p = {
+          x: gridSnap(playRect.x + CELL + Math.random()*(playRect.w-2*CELL)),
+          y: gridSnap(playRect.y + CELL + Math.random()*(playRect.h-2*CELL))
+        };
+      }while(collidesWithSnake(p) || !insidePlay(p.x, p.y));
+      icons.push(p);
+    }
+  }
+
+  function collidesWithSnake(p){
+    return snake.some(s => s.x===p.x && s.y===p.y);
+  }
+
+  // ----- рисование спрайтов -----
+  function drawBearHead(x,y){
+    // тело-кружок
+    ctx.save();
+    ctx.translate(x+CELL/2, y+CELL/2);
+    const R = CELL*0.65;
+    // тень
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.beginPath(); ctx.ellipse(4,6,R*0.95,R*0.7,0,0,Math.PI*2); ctx.fill();
+    // морда
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.arc(0,0,R,0,Math.PI*2); ctx.fill();
+    // ушки
+    ctx.beginPath(); ctx.arc(-R*.55,-R*.55,R*.28,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( R*.55,-R*.55,R*.28,0,Math.PI*2); ctx.fill();
+    // нос
+    ctx.fillStyle='#1f1f1f';
+    ctx.beginPath(); ctx.ellipse(0,R*0.12,R*0.28,R*0.22,0,0,Math.PI*2); ctx.fill();
+    // очки
+    ctx.strokeStyle='#111'; ctx.lineWidth=4;
+    ctx.strokeRect(-R*0.62,-R*0.2,R*0.48,R*0.32);
+    ctx.strokeRect( R*0.14,-R*0.2,R*0.48,R*0.32);
+    ctx.beginPath(); ctx.moveTo(-R*0.14,-R*0.06); ctx.lineTo(R*0.14,-R*0.06); ctx.stroke();
+    ctx.restore();
+  }
+  function drawIconA(x,y){
+    const s = CELL*0.8;
+    ctx.save();
+    ctx.translate(x+CELL/2, y+CELL/2);
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    // буква «А» (белая)
+    ctx.moveTo(-s*0.45, s*0.5);
+    ctx.lineTo(0, -s*0.5);
+    ctx.lineTo(s*0.45, s*0.5);
+    ctx.lineTo(s*0.2, s*0.5);
+    ctx.lineTo(s*0.08, s*0.2);
+    ctx.lineTo(-s*0.08, s*0.2);
+    ctx.lineTo(-s*0.2, s*0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  function drawSnake(){
+    // хвост — мягкие круглые сегменты
+    for(let i=1;i<snake.length;i++){
+      const s = snake[i];
+      ctx.fillStyle = '#efeef6';
+      ctx.beginPath();
+      ctx.arc(s.x+CELL/2, s.y+CELL/2, CELL*0.4*(1-i/snake.length*0.6), 0, Math.PI*2); ctx.fill();
+    }
+    // голова-мишка
+    const head = snake[0];
+    drawBearHead(head.x, head.y);
+  }
+
+  // ----- управление -----
+  let touchStart = null;
+  function setDirFromDelta(dx,dy){
+    if(Math.abs(dx) > Math.abs(dy)){
+      if(dx>8 && dir.x!==-1){ dir.x=1; dir.y=0; }
+      if(dx<-8 && dir.x!== 1){ dir.x=-1; dir.y=0; }
+    }else{
+      if(dy>8 && dir.y!==-1){ dir.x=0; dir.y=1; }
+      if(dy<-8 && dir.y!== 1){ dir.x=0; dir.y=-1; }
+    }
+  }
+  canvas.addEventListener('touchstart', e=>{
+    const t = e.changedTouches[0];
+    touchStart = {x:t.clientX, y:t.clientY};
+    e.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('touchmove', e=>{
+    if(!touchStart) return;
+    const t = e.changedTouches[0];
+    setDirFromDelta(t.clientX - touchStart.x, t.clientY - touchStart.y);
+    // палец не отрываем — только меняем направление
+    e.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('touchend', ()=>{ touchStart=null });
+
+  // клавиатура для десктопа
   document.addEventListener('keydown', e=>{
-    if(e.key==='ArrowRight') go(state.screen+1);
-    if(e.key==='ArrowLeft')  go(state.screen-1);
-    if(e.key===' ') start();
+    if(e.key==='ArrowLeft'  && dir.x!==1 ){dir.x=-1;dir.y=0}
+    if(e.key==='ArrowRight' && dir.x!==-1){dir.x=1; dir.y=0}
+    if(e.key==='ArrowUp'    && dir.y!==1 ){dir.x=0; dir.y=-1}
+    if(e.key==='ArrowDown'  && dir.y!==-1){dir.x=0; dir.y=1}
   });
+
+  // ----- петля -----
+  let tick=0, running=true;
+  function step(){
+    if(!running) return;
+    requestAnimationFrame(step);
+
+    // 60fps -> двигаем каждые N кадров
+    if((++tick)%6!==0) return;
+
+    // новая голова
+    const head = {...snake[0]};
+    head.x += dir.x*CELL*speed;
+    head.y += dir.y*CELL*speed;
+
+    // столкновение со стеной/кустами
+    if(!insidePlay(head.x+CELL/2, head.y+CELL/2)){
+      gameOver(); return;
+    }
+    // сам себя
+    if(snake.slice(0, -1).some(s => s.x===head.x && s.y===head.y)){
+      gameOver(); return;
+    }
+
+    snake.unshift(head);
+    if(grow>0) { grow--; } else { snake.pop(); }
+
+    // иконки
+    for(let i=0;i<icons.length;i++){
+      if(icons[i].x===head.x && icons[i].y===head.y){
+        // «сломали» иконку
+        icons.splice(i,1);
+        score++; grow+=2;
+        scoreEl.textContent='Счёт: '+score;
+        break;
+      }
+    }
+    if(icons.length===0) spawnIcons(7);
+
+    // ---- РЕНДЕР ----
+    ctx.clearRect(0,0,W,H);
+    drawFloor();
+    drawBushBorder();
+
+    // иконки
+    icons.forEach(p=> drawIconA(p.x, p.y));
+
+    // змейка/мишка
+    drawSnake();
+  }
+
+  function gameOver(){
+    running=false;
+    // затемнение
+    ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff'; ctx.font='bold 72px system-ui, -apple-system';
+    ctx.textAlign='center';
+    ctx.fillText('Вы врезались в кусты 😅', W/2, H/2 - 40);
+    ctx.font='bold 48px system-ui';
+    ctx.fillText('Нажмите «Перезапуск»', W/2, H/2 + 20);
+  }
+
+  document.getElementById('restart').onclick = ()=>{ reset(); step(); };
+
+  // старт
+  reset();
+  step();
+})();
 </script>
 </body>
 </html>
